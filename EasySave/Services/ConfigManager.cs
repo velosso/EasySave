@@ -8,8 +8,6 @@ namespace EasySave.Services
 {
     public static class ConfigManager
     {
-        private const int MaxJobs = 5;
-
         private static readonly JsonSerializerOptions Options =
             new JsonSerializerOptions { WriteIndented = true };
 
@@ -36,13 +34,13 @@ namespace EasySave.Services
             try
             {
                 string json = File.ReadAllText(ConfigPath);
-
                 return JsonSerializer.Deserialize<List<WorkSave>>(json)
                        ?? new List<WorkSave>();
             }
             catch (JsonException)
             {
-                Console.WriteLine("[WARNING] jobs.json corrupted — starting fresh.");
+                Console.WriteLine(
+                    "[WARNING] jobs.json corrupted — starting fresh.");
                 return new List<WorkSave>();
             }
         }
@@ -55,9 +53,6 @@ namespace EasySave.Services
 
         public static void AddJob(List<WorkSave> jobs, WorkSave newJob)
         {
-            if (jobs.Count >= MaxJobs)
-                throw new InvalidOperationException(
-                    $"Maximum {MaxJobs} jobs allowed in version 1.0.");
 
             if (string.IsNullOrWhiteSpace(newJob.Name))
                 throw new ArgumentException(

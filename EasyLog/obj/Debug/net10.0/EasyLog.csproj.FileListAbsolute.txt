@@ -1,11 +1,11 @@
-C:\Users\frank\RiderProjects\EasySave\EasyLog\bin\Debug\net10.0\EasyLog.deps.json
-C:\Users\frank\RiderProjects\EasySave\EasyLog\bin\Debug\net10.0\EasyLog.dll
-C:\Users\frank\RiderProjects\EasySave\EasyLog\bin\Debug\net10.0\EasyLog.pdb
 C:\Users\frank\RiderProjects\EasySave\EasyLog\obj\Debug\net10.0\EasyLog.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\frank\RiderProjects\EasySave\EasyLog\obj\Debug\net10.0\EasyLog.AssemblyInfoInputs.cache
 C:\Users\frank\RiderProjects\EasySave\EasyLog\obj\Debug\net10.0\EasyLog.AssemblyInfo.cs
 C:\Users\frank\RiderProjects\EasySave\EasyLog\obj\Debug\net10.0\EasyLog.csproj.CoreCompileInputs.cache
 C:\Users\frank\RiderProjects\EasySave\EasyLog\obj\Debug\net10.0\EasyLog.sourcelink.json
+C:\Users\frank\RiderProjects\EasySave\EasyLog\bin\Debug\net10.0\EasyLog.deps.json
+C:\Users\frank\RiderProjects\EasySave\EasyLog\bin\Debug\net10.0\EasyLog.dll
+C:\Users\frank\RiderProjects\EasySave\EasyLog\bin\Debug\net10.0\EasyLog.pdb
 C:\Users\frank\RiderProjects\EasySave\EasyLog\obj\Debug\net10.0\EasyLog.dll
 C:\Users\frank\RiderProjects\EasySave\EasyLog\obj\Debug\net10.0\refint\EasyLog.dll
 C:\Users\frank\RiderProjects\EasySave\EasyLog\obj\Debug\net10.0\EasyLog.pdb

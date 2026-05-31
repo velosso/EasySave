@@ -6,8 +6,6 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-      <Compile Include="obj\XmlLogger.cs" />
-    </ItemGroup>
+   
 
 </Project>

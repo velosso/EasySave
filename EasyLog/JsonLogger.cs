@@ -33,10 +33,10 @@ namespace EasyLog
             string sourcePath,
             string targetPath,
             long   fileSize,
-            long   transferTimeMs)
+            long   transferTimeMs, long   encryptionTimeMs = 0)
         {
             _entries.Add(new LogEntry(jobName, sourcePath, targetPath,
-                fileSize, transferTimeMs));
+                fileSize, transferTimeMs, encryptionTimeMs));
 
             File.WriteAllText(_logPath,
                 JsonSerializer.Serialize(_entries, _options));

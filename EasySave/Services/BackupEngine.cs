@@ -10,21 +10,39 @@ namespace EasySave.Services
     public class BackupEngine
     {
         private readonly Ilogger _logger;
-        private readonly StateWriter  _stateWriter;
+        private readonly StateWriter         _stateWriter;
+        private readonly AppSettings         _settings;
+        private readonly CryptoSoftAdapter   _cryptoAdapter;
 
         private int  _totalFiles;
         private long _totalSize;
         private int  _remainingFiles;
         private long _remainingSize;
 
-        public BackupEngine(Ilogger logger, StateWriter stateWriter)
+        public BackupEngine(Ilogger logger,
+            StateWriter  stateWriter,
+            AppSettings  settings = null)
         {
-            _logger      = logger;
+            _logger = logger;
             _stateWriter = stateWriter;
+            _settings    = settings ?? new AppSettings();
+            _cryptoAdapter = new CryptoSoftAdapter(_settings.CryptoSoftPath);
         }
         
         public void Execute(WorkSave job)
         {
+            // Vérification 1 : logiciel métier actif ?
+            if (BusinessSoftwareDetector.IsRunning(_settings.BusinessSoftware))
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine(
+                    $"  [BLOCKED] '{_settings.BusinessSoftware}' is running. " +
+                    $"Cannot start '{job.Name}'.");
+                Console.ResetColor();
+                return;
+            }
+
+            // Vérification 2 : dossier source accessible ?
             if (!Directory.Exists(job.SourcePath))
                 throw new DirectoryNotFoundException(
                     $"Source folder not found: '{job.SourcePath}'");
@@ -35,7 +53,8 @@ namespace EasySave.Services
 
             Console.WriteLine();
             Console.WriteLine($"  Starting: {job.Name}");
-            Console.WriteLine($"  {_totalFiles} file(s) — {FormatSize(_totalSize)}");
+            Console.WriteLine(
+                $"  {_totalFiles} file(s) — {FormatSize(_totalSize)}");
             Console.WriteLine(new string('─', 60));
 
             if (job.BackupType == "complete")
@@ -61,7 +80,7 @@ namespace EasySave.Services
 
             Console.WriteLine(new string('─', 60));
             Console.WriteLine($"  Done: {job.Name} ✓");
-        }
+        } 
         
         public void ExecuteAll(List<WorkSave> jobs)
         {
@@ -151,51 +170,83 @@ namespace EasySave.Services
     }
 }
 
-private void CopySingleFile(string jobName,
+    private void CopySingleFile(string jobName,
                              string filePath,
                              string targetDir)
 {
-    FileInfo fi         = new FileInfo(filePath);
-    string   targetFile = Path.Combine(targetDir, fi.Name);
-    long     timeMs     = -1;
+    FileInfo fi          = new FileInfo(filePath);
+    string   targetFile  = Path.Combine(targetDir, fi.Name);
+    long     timeMs      = -1;
+    long     encryptMs   = 0;
 
     try
     {
+       
         Stopwatch sw = Stopwatch.StartNew();
         File.Copy(filePath, targetFile, overwrite: true);
         sw.Stop();
-
         timeMs = sw.ElapsedMilliseconds;
 
+       
+        if (_cryptoAdapter.ShouldEncrypt(filePath,
+                _settings.EncryptedExtensions))
+        {
+            encryptMs = _cryptoAdapter.Encrypt(targetFile);
+
+            if (encryptMs < 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine(
+                    $"  ⚠ Encryption failed on {fi.Name} " +
+                    $"(code: {encryptMs})");
+                Console.ResetColor();
+            }
+        }
+
+        
         _remainingFiles--;
         _remainingSize -= fi.Length;
 
+       
         _stateWriter.UpdateActive(
             jobName,
-            _totalFiles,   _totalSize,
-            _remainingFiles, _remainingSize,
-            filePath,      targetFile);
+            _totalFiles,      _totalSize,
+            _remainingFiles,  _remainingSize,
+            filePath,         targetFile);
+
+       
+        string encryptInfo = encryptMs > 0
+            ? $"   {encryptMs}ms"
+            : "";
 
         Console.WriteLine(
-            $"  ✓ {fi.Name,-35} " +
+            $"  ✓ {fi.Name,-30} " +
             $"{FormatSize(fi.Length),8}   " +
-            $"{timeMs,5} ms");
+            $"{timeMs,5}ms{encryptInfo}");
     }
     catch (UnauthorizedAccessException)
     {
         Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine($"  ✗ {fi.Name,-35} [access denied]");
+        Console.WriteLine(
+            $"  ✗ {fi.Name,-30} [access denied]");
         Console.ResetColor();
     }
     catch (IOException ex)
     {
         Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine($"  ✗ {fi.Name,-35} [I/O error: {ex.Message}]");
+        Console.WriteLine(
+            $"  ✗ {fi.Name,-30} [I/O: {ex.Message}]");
         Console.ResetColor();
     }
     finally
     {
-        _logger.Log(jobName, filePath, targetFile, fi.Length, timeMs);
+       
+        _logger.Log(jobName,
+                    filePath,
+                    targetFile,
+                    fi.Length,
+                    timeMs,
+                    encryptMs);
     }
 }
 

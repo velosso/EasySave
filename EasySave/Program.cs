@@ -37,10 +37,12 @@ namespace EasySave
         private static void RunApplication(string[] args)
         {
             _lang = new LanguageManager(Language.French);
-
-            Ilogger logger = new JsonLogger();
-            StateWriter  stateWriter = new StateWriter();
-            _engine = new BackupEngine(logger, stateWriter);
+            
+            AppSettings settings = SettingsManager.Load();
+            Ilogger logger      = SettingsManager.CreateLogger(settings);
+            StateWriter stateWriter = new StateWriter();
+            
+            _engine = new BackupEngine(logger, stateWriter, settings);
 
             _jobs = ConfigManager.LoadJobs();
 

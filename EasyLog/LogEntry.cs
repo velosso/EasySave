@@ -10,6 +10,7 @@ namespace EasyLog
         public string TargetPath     { get; set; }
         public long   FileSize       { get; set; }
         public long   TransferTimeMs { get; set; }
+        public long   EncryptionTimeMs  { get; set; }
 
         public LogEntry() { }
 
@@ -17,7 +18,8 @@ namespace EasyLog
             string sourcePath,
             string targetPath,
             long   fileSize,
-            long   transferTimeMs)
+            long   transferTimeMs,
+            long   encryptionTimeMs = 0)
         {
             Timestamp      = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             JobName        = jobName;
@@ -25,6 +27,7 @@ namespace EasyLog
             TargetPath     = targetPath;
             FileSize       = fileSize;
             TransferTimeMs = transferTimeMs;
+            EncryptionTimeMs  = encryptionTimeMs;
         }
     }
 }

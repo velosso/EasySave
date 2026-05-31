@@ -11,8 +11,4 @@
       <ProjectReference Include="..\EasyLog\EasyLog.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Helpers\" />
-    </ItemGroup>
-
 </Project>

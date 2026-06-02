@@ -84,25 +84,41 @@
                                 HorizontalAlignment="Right"
                                 Margin="4,8,4,4">
 
-                        <Button Content="▶ Run selected"
+                        <!-- Contrôles travail sélectionné -->
+                        <Button Content="▶ Run"
                                 Command="{Binding ExecuteJobCommand}"
-                                Width="130" Height="32"
-                                Margin="0,0,8,0"
-                                Background="#1D9E75"
-                                Foreground="White"/>
+                                Width="80" Height="32" Margin="0,0,4,0"
+                                Background="#1D9E75" Foreground="White"/>
 
+                        <Button Content="⏸ Pause"
+                                Command="{Binding PauseJobCommand}"
+                                Width="80" Height="32" Margin="0,0,4,0"
+                                Background="#E67E22" Foreground="White"/>
+
+                        <Button Content="⏹ Stop"
+                                Command="{Binding StopJobCommand}"
+                                Width="80" Height="32" Margin="0,0,12,0"
+                                Background="#C0392B" Foreground="White"/>
+
+                        <!-- Séparateur visuel -->
+                        <Separator Width="1" Height="28"
+                                   Background="#CCCCCC" Margin="0,0,12,0"/>
+
+                        <!-- Contrôles tous les travaux -->
                         <Button Content="▶▶ Run all"
                                 Command="{Binding ExecuteAllCommand}"
-                                Width="110" Height="32"
-                                Margin="0,0,8,0"
-                                Background="#185FA5"
-                                Foreground="White"/>
+                                Width="90" Height="32" Margin="0,0,4,0"
+                                Background="#185FA5" Foreground="White"/>
 
-                        <Button Content="✕ Remove"
-                                Command="{Binding RemoveJobCommand}"
+                        <Button Content="⏸ Pause all"
+                                Command="{Binding PauseAllCommand}"
+                                Width="90" Height="32" Margin="0,0,4,0"
+                                Background="#E67E22" Foreground="White"/>
+
+                        <Button Content="⏹ Stop all"
+                                Command="{Binding StopAllCommand}"
                                 Width="90" Height="32"
-                                Background="#C0392B"
-                                Foreground="White"/>
+                                Background="#C0392B" Foreground="White"/>
                     </StackPanel>
                 </Grid>
             </GroupBox>

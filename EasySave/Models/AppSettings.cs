@@ -8,6 +8,9 @@ namespace EasySave.Models
         public string       BusinessSoftware     { get; set; }
         public List<string> EncryptedExtensions  { get; set; }
         public string       CryptoSoftPath       { get; set; }
+        
+        public List<string> PriorityExtensions   { get; set; }
+        public long         MaxLargeFileSizeKb   { get; set; }
 
         public AppSettings()
         {
@@ -15,6 +18,10 @@ namespace EasySave.Models
             BusinessSoftware    = "";
             EncryptedExtensions = new List<string>();
             CryptoSoftPath      = "";
+
+            // v3.0 : valeurs par défaut
+            PriorityExtensions  = new List<string>();
+            MaxLargeFileSizeKb  = 1024; 
         }
     }
 }

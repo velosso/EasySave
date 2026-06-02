@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -14,12 +16,19 @@ namespace EasySave.GUI.ViewModels
     public class MainViewModel : BaseViewModel
     {
         // ===== SERVICES =====
-        private readonly StateWriter _stateWriter;
-        private BackupEngine         _engine;
-        private AppSettings          _settings;
+        private readonly StateWriter        _stateWriter;
+        private ParallelBackupEngine        _engine;   // ← CORRECTION : ParallelBackupEngine
+        private AppSettings                 _settings;
+
+        // ===== COMMANDES v3.0 =====
+        public ICommand PauseJobCommand  { get; }
+        public ICommand PlayJobCommand   { get; }
+        public ICommand StopJobCommand   { get; }
+        public ICommand PauseAllCommand  { get; }
+        public ICommand PlayAllCommand   { get; }
+        public ICommand StopAllCommand   { get; }
 
         // ===== PROPRIÉTÉS OBSERVABLES =====
-
         private ObservableCollection<WorkSave> _jobs;
         public ObservableCollection<WorkSave> Jobs
         {
@@ -34,10 +43,10 @@ namespace EasySave.GUI.ViewModels
             set => SetProperty(ref _selectedJob, value);
         }
 
-        private string _newName        = "";
-        private string _newSourcePath  = "";
-        private string _newTargetPath  = "";
-        private string _newBackupType  = "complete";
+        private string _newName       = "";
+        private string _newSourcePath = "";
+        private string _newTargetPath = "";
+        private string _newBackupType = "complete";
 
         public string NewName
         {
@@ -60,7 +69,7 @@ namespace EasySave.GUI.ViewModels
             set => SetProperty(ref _newBackupType, value);
         }
 
-        private string _statusMessage = "Ready — EasySave v2.0";
+        private string _statusMessage = "Ready — EasySave v3.0";
         public string StatusMessage
         {
             get => _statusMessage;
@@ -87,10 +96,10 @@ namespace EasySave.GUI.ViewModels
         public bool IsNotRunning => !_isRunning;
 
         // ===== COMMANDES =====
-        public ICommand AddJobCommand      { get; }
-        public ICommand RemoveJobCommand   { get; }
-        public ICommand ExecuteJobCommand  { get; }
-        public ICommand ExecuteAllCommand  { get; }
+        public ICommand AddJobCommand       { get; }
+        public ICommand RemoveJobCommand    { get; }
+        public ICommand ExecuteJobCommand   { get; }
+        public ICommand ExecuteAllCommand   { get; }
         public ICommand OpenSettingsCommand { get; }
 
         // ===== CONSTRUCTEUR =====
@@ -104,6 +113,7 @@ namespace EasySave.GUI.ViewModels
             Jobs = new ObservableCollection<WorkSave>(
                 ConfigManager.LoadJobs());
 
+            // Commandes principales
             AddJobCommand = new RelayCommand(
                 ExecuteAddJob,
                 () => IsNotRunning
@@ -126,14 +136,40 @@ namespace EasySave.GUI.ViewModels
             OpenSettingsCommand = new RelayCommand(
                 ExecuteOpenSettings,
                 () => IsNotRunning);
+
+            // Commandes v3.0
+            PauseJobCommand = new RelayCommand(
+                ExecutePauseJob,
+                () => SelectedJob != null && IsRunning);
+
+            PlayJobCommand = new RelayCommand(
+                ExecutePlayJob,
+                () => SelectedJob != null && IsRunning);
+
+            StopJobCommand = new RelayCommand(
+                ExecuteStopJob,
+                () => SelectedJob != null && IsRunning);
+
+            PauseAllCommand = new RelayCommand(
+                () => _engine.PauseAll(),
+                () => IsRunning);
+
+            PlayAllCommand = new RelayCommand(
+                () => _engine.PlayAll(),
+                () => IsRunning);
+
+            StopAllCommand = new RelayCommand(
+                () => { _engine.StopAll(); IsRunning = false; },
+                () => IsRunning);
         }
 
         // ===== MÉTHODES PRIVÉES =====
 
         private void RebuildEngine()
         {
+            // CORRECTION : ILogger (majuscule) + ParallelBackupEngine
             Ilogger logger = SettingsManager.CreateLogger(_settings);
-            _engine = new BackupEngine(logger, _stateWriter, _settings);
+            _engine = new ParallelBackupEngine(logger, _stateWriter, _settings);
         }
 
         private void ExecuteAddJob()
@@ -146,8 +182,7 @@ namespace EasySave.GUI.ViewModels
                 ConfigManager.AddJob(Jobs.ToList(), newJob);
                 Jobs.Add(newJob);
 
-                StatusMessage =
-                    $"Job '{NewName}' added ({Jobs.Count} total).";
+                StatusMessage = $"Job '{NewName}' added ({Jobs.Count} total).";
 
                 NewName       = "";
                 NewSourcePath = "";
@@ -166,12 +201,9 @@ namespace EasySave.GUI.ViewModels
         {
             if (SelectedJob == null) return;
 
-            string name   = SelectedJob.Name;
-            int    index  = Jobs.IndexOf(SelectedJob);
-
+            string name = SelectedJob.Name;
             Jobs.Remove(SelectedJob);
             ConfigManager.SaveJobs(Jobs.ToList());
-
             StatusMessage = $"Job '{name}' removed.";
         }
 
@@ -187,15 +219,13 @@ namespace EasySave.GUI.ViewModels
 
             try
             {
-                await Task.Run(() => _engine.Execute(job));
+                await _engine.ExecuteJobAsync(job);
                 Progress      = 100;
                 StatusMessage = $"'{job.Name}' completed ✓";
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error: {ex.Message}";
-                MessageBox.Show(ex.Message, "EasySave",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -209,21 +239,17 @@ namespace EasySave.GUI.ViewModels
 
             IsRunning     = true;
             Progress      = 0;
-            StatusMessage = $"Running {Jobs.Count} job(s)...";
-
-            var jobs = Jobs.ToList();
+            StatusMessage = $"Running {Jobs.Count} job(s) in parallel...";
 
             try
             {
-                await Task.Run(() => _engine.ExecuteAll(jobs));
+                await _engine.ExecuteAllParallelAsync(Jobs.ToList());
                 Progress      = 100;
-                StatusMessage = $"All {jobs.Count} job(s) completed ✓";
+                StatusMessage = $"All {Jobs.Count} job(s) completed ✓";
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error: {ex.Message}";
-                MessageBox.Show(ex.Message, "EasySave",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -231,6 +257,7 @@ namespace EasySave.GUI.ViewModels
             }
         }
 
+        // CORRECTION : méthode manquante ajoutée
         private void ExecuteOpenSettings()
         {
             SettingsWindow win = new SettingsWindow(_settings);
@@ -245,6 +272,28 @@ namespace EasySave.GUI.ViewModels
             }
         }
 
+        private void ExecutePauseJob()
+        {
+            if (SelectedJob == null) return;
+            _engine.GetController(SelectedJob.Name).Pause();
+            StatusMessage = $"'{SelectedJob.Name}' paused.";
+        }
+
+        private void ExecutePlayJob()
+        {
+            if (SelectedJob == null) return;
+            _engine.GetController(SelectedJob.Name).Play();
+            StatusMessage = $"'{SelectedJob.Name}' resumed.";
+        }
+
+        private void ExecuteStopJob()
+        {
+            if (SelectedJob == null) return;
+            _engine.GetController(SelectedJob.Name).Stop();
+            StatusMessage = $"'{SelectedJob.Name}' stopped.";
+        }
+
+        // CORRECTION : méthode manquante ajoutée
         public void OnWindowClosing()
         {
             ConfigManager.SaveJobs(Jobs.ToList());

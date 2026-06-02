@@ -60,5 +60,13 @@ namespace EasySave.Services
 
             return new EasyLog.JsonLogger();
         }
+        
+        public static ParallelBackupEngine CreateParallelEngine(
+            AppSettings settings,
+            StateWriter stateWriter)
+        {
+            Ilogger logger = CreateLogger(settings);
+            return new ParallelBackupEngine(logger, stateWriter, settings);
+        }
     }
 }

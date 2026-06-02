@@ -1,12 +1,182 @@
 ﻿<Window x:Class="EasySave.GUI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:EasySave.GUI"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        xmlns:vm="clr-namespace:EasySave.GUI.ViewModels"
+        Title="EasySave v2.0"
+        Height="620" Width="920"
+        MinHeight="500" MinWidth="750"
+        Closing="Window_Closing">
 
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ===== EN-TÊTE ===== -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="EasySave"
+                           FontSize="22" FontWeight="Bold"/>
+                <TextBlock Text="Backup Manager — ProSoft v2.0"
+                           FontSize="12" Foreground="Gray"/>
+            </StackPanel>
+
+            <Button Grid.Column="1"
+                    Content="⚙ Settings"
+                    Command="{Binding OpenSettingsCommand}"
+                    Width="110" Height="34"
+                    VerticalAlignment="Center"/>
+        </Grid>
+
+        <!-- ===== CONTENU PRINCIPAL ===== -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="260"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- === LISTE DES TRAVAUX === -->
+            <GroupBox Grid.Column="0"
+                      Header="Backup Jobs"
+                      Margin="0,0,10,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <ListView Grid.Row="0"
+                              ItemsSource="{Binding Jobs}"
+                              SelectedItem="{Binding SelectedJob}"
+                              Margin="4" FontSize="13">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Name"
+                                                Width="150"
+                                                DisplayMemberBinding="{Binding Name}"/>
+                                <GridViewColumn Header="Source"
+                                                Width="180"
+                                                DisplayMemberBinding="{Binding SourcePath}"/>
+                                <GridViewColumn Header="Target"
+                                                Width="180"
+                                                DisplayMemberBinding="{Binding TargetPath}"/>
+                                <GridViewColumn Header="Type"
+                                                Width="100"
+                                                DisplayMemberBinding="{Binding BackupType}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+
+                    <!-- Boutons d'action -->
+                    <StackPanel Grid.Row="1"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="4,8,4,4">
+
+                        <Button Content="▶ Run selected"
+                                Command="{Binding ExecuteJobCommand}"
+                                Width="130" Height="32"
+                                Margin="0,0,8,0"
+                                Background="#1D9E75"
+                                Foreground="White"/>
+
+                        <Button Content="▶▶ Run all"
+                                Command="{Binding ExecuteAllCommand}"
+                                Width="110" Height="32"
+                                Margin="0,0,8,0"
+                                Background="#185FA5"
+                                Foreground="White"/>
+
+                        <Button Content="✕ Remove"
+                                Command="{Binding RemoveJobCommand}"
+                                Width="90" Height="32"
+                                Background="#C0392B"
+                                Foreground="White"/>
+                    </StackPanel>
+                </Grid>
+            </GroupBox>
+
+            <!-- === PANNEAU DROITE : Ajout + Progression === -->
+            <StackPanel Grid.Column="1">
+
+                <!-- Formulaire ajout -->
+                <GroupBox Header="Add new job">
+                    <StackPanel Margin="8">
+
+                        <TextBlock Text="Name :"
+                                   Margin="0,4,0,2"/>
+                        <TextBox Text="{Binding NewName,
+                                         UpdateSourceTrigger=PropertyChanged}"
+                                 Height="26"/>
+
+                        <TextBlock Text="Source folder :"
+                                   Margin="0,8,0,2"/>
+                        <TextBox Text="{Binding NewSourcePath,
+                                         UpdateSourceTrigger=PropertyChanged}"
+                                 Height="26"/>
+
+                        <TextBlock Text="Target folder :"
+                                   Margin="0,8,0,2"/>
+                        <TextBox Text="{Binding NewTargetPath,
+                                         UpdateSourceTrigger=PropertyChanged}"
+                                 Height="26"/>
+
+                        <TextBlock Text="Type :"
+                                   Margin="0,8,0,2"/>
+                        <ComboBox SelectedValue="{Binding NewBackupType}"
+                                  Height="26" Margin="0,0,0,12">
+                            <ComboBoxItem Content="complete"
+                                          IsSelected="True"/>
+                            <ComboBoxItem Content="differentielle"/>
+                        </ComboBox>
+
+                        <Button Content="+ Add job"
+                                Command="{Binding AddJobCommand}"
+                                Height="34"
+                                Background="#1D9E75"
+                                Foreground="White"
+                                FontWeight="SemiBold"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Progression -->
+                <GroupBox Header="Progress" Margin="0,10,0,0">
+                    <StackPanel Margin="8">
+                        <ProgressBar Value="{Binding Progress}"
+                                     Minimum="0" Maximum="100"
+                                     Height="18"/>
+                        <TextBlock
+                            Text="{Binding Progress,
+                                   StringFormat={}{0:F0}%}"
+                            HorizontalAlignment="Center"
+                            Margin="0,4,0,0"/>
+                    </StackPanel>
+                </GroupBox>
+
+            </StackPanel>
+        </Grid>
+
+        <!-- ===== BARRE DE STATUT ===== -->
+        <Border Grid.Row="2"
+                Background="#F5F5F5"
+                BorderBrush="#DDDDDD"
+                BorderThickness="0,1,0,0"
+                Padding="8,5"
+                Margin="0,10,0,0">
+            <TextBlock Text="{Binding StatusMessage}"
+                       FontSize="12"
+                       Foreground="#555"/>
+        </Border>
     </Grid>
 </Window>
